@@ -392,7 +392,7 @@ def main():
 
     # MLM Task
     if args.mlm_task is not None and args.mlm_task not in ["snli", "qqp"]:
-        raw_datasets_mlm = load_from_disk(f'./data/{args.mlm_task}')
+        raw_datasets_mlm = load_dataset(args.mlm_task)
         column_names = raw_datasets_mlm["train"].column_names
         text_column_name = "text" if "text" in column_names else column_names[0]
         max_seq_length = args.mlm_len
@@ -479,13 +479,13 @@ def main():
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
 
     if args.label_smoothing == -1:
-        loss_cls_masked = CrossEntropyLoss()
+        loss_cls = CrossEntropyLoss()
     else:
-        loss_cls_masked = LabelSmoothingLoss(args.label_smoothing, num_labels)
+        loss_cls = LabelSmoothingLoss(args.label_smoothing, num_labels)
 
     # Prepare everything with our `accelerator`.
-    model, model_pretrained, optimizer, train_dataloader, train_dataloader_mix, eval_dataloader, loss_cls_masked = accelerator.prepare(
-        model, model_pretrained, optimizer, train_dataloader, train_dataloader_mix, eval_dataloader, loss_cls_masked
+    model, model_pretrained, optimizer, train_dataloader, train_dataloader_mix, eval_dataloader, loss_cls = accelerator.prepare(
+        model, model_pretrained, optimizer, train_dataloader, train_dataloader_mix, eval_dataloader, loss_cls
     )
 
     # Note -> the training dataloader needs to be prepared before we grab his length below (cause its length will be
@@ -535,20 +535,8 @@ def main():
                 labels_mlm = batch_mix.pop('labels_mlm', None)
                 labels_cls_masked = batch_mix.pop("labels_cls", None)
                 labels_cls = batch.pop("labels", None)
-                loss_fct = CrossEntropyLoss()
+                loss_mlm = CrossEntropyLoss()
                 logits_cls_masked, logits_px, z1 = model(batch_mix) # MLM + Classification
-
-                # PPLM
-                # logits_cls_masked, z = model.variational(batch_mix)
-                # loss_cls_masked = loss_fct(logits_cls_masked.view(-1, num_labels), labels_cls_masked.view(-1))
-                # for _ in range(args.pplm_iter):
-                #     dz = torch.autograd.grad(loss_cls_masked, z)
-                #     dz = F.normalize(torch.concat(dz), p=2, dim=-1)
-                #     z += dz
-                #     hs = torch.mean(z, dim=1, keepdim=True)
-                #     logits_cls_masked = model.variational.classifier(hs)
-                #     loss_cls_masked = loss_fct(logits_cls_masked.view(-1, num_labels), labels_cls_masked.view(-1))
-                # logits_px = model.generator(z)
                 
                 # CLS
                 logits_cls, z2 = model.variational(batch) # Classification only
@@ -556,18 +544,18 @@ def main():
                 # Align with original pretrained LM
                 with torch.no_grad():
                     output_pretrained = model_pretrained(**batch_mix, labels=labels_mlm)
-                    mask_token_index = (labels_mlm.view(-1) != loss_fct.ignore_index).nonzero().squeeze(-1)
+                    mask_token_index = (labels_mlm.view(-1) != loss_mlm.ignore_index).nonzero().squeeze(-1)
                     labels_mlm = output_pretrained.logits.view(-1, model.config.vocab_size)[mask_token_index].softmax(-1)
 
                 # Classification Error Unmasked
-                loss = loss_cls_masked(logits_cls.view(-1, num_labels), labels_cls.view(-1))
+                loss = loss_cls(logits_cls.view(-1, num_labels), labels_cls.view(-1))
                 # Classification Error Masked
-                # loss = loss_fct(logits_cls_masked.view(-1, num_labels), labels_cls_masked.view(-1))
+                # loss = loss_cls(logits_cls_masked.view(-1, num_labels), labels_cls_masked.view(-1))
                 
                 # ELBO
-                reconstruct = args.temperature * loss_fct(logits_px.view(-1, model.config.vocab_size)[mask_token_index], labels_mlm)
+                reconstruct = args.temperature * loss_mlm(logits_px.view(-1, model.config.vocab_size)[mask_token_index], labels_mlm)
                 # reconstruct = args.temperature * torch.nn.KLDivLoss(reduction="batchmean")(logits_px.view(-1, model.config.vocab_size)[mask_token_index].softmax(-1), labels_mlm)
-                # reconstruct = args.temperature * loss_fct(logits_px.view(-1, model.config.vocab_size), labels_mlm.view(-1))
+                # reconstruct = args.temperature * loss_mlm(logits_px.view(-1, model.config.vocab_size), labels_mlm.view(-1))
                 kl = args.kl_temp * (torch.sum(torch.pow(torch.mean(z1, dim=1), 2)) + torch.sum(torch.pow(torch.mean(z2, dim=1), 2)))
                 loss += reconstruct + kl
 

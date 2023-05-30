@@ -16,7 +16,7 @@ kl=1e-4
 for SEED in 13 21 42 87 100
 do
     # Train
-    accelerate launch run_mc_jl.py \
+    accelerate launch run_mc_JL.py \
       --model_name_or_path $MODEL_PATH \
       --dataset_name $TASK_NAME \
       --max_length 256 \
@@ -37,7 +37,7 @@ do
       --conf_dir ./outputs/conf/$TASK_NAME/${EVAL_SPLIT}/${MODEL_NAME}_vae_lr=${lr}_ls=${ls}_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=$SEED
 
     # OOD Eval
-    python run_mc_jl.py \
+    python run_mc_JL.py \
       --model_name_or_path $MODEL_PATH \
       --dataset_name $OOD_TASK \
       --max_length 256 \

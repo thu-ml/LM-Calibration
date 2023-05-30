@@ -482,7 +482,7 @@ def main():
     mlm_flat_flag = True
     if args.mlm_task is not None and args.mlm_task not in ["swag"]:
         mlm_flat_flag = False
-        raw_datasets_mlm = load_from_disk(f'./data/{args.mlm_task}')
+        raw_datasets_mlm = load_dataset(args.mlm_task)
         column_names = raw_datasets_mlm["train"].column_names
         text_column_name = "text" if "text" in column_names else column_names[0]
         max_seq_length = args.mlm_len
@@ -600,13 +600,13 @@ def main():
     )
     
     if args.label_smoothing == -1:
-        loss_cls_masked = CrossEntropyLoss()
+        loss_cls = CrossEntropyLoss()
     else:
-        loss_cls_masked = LabelSmoothingLoss(args.label_smoothing, 4)
+        loss_cls = LabelSmoothingLoss(args.label_smoothing, 4)
 
     # Prepare everything with our `accelerator`.
-    model, model_pretrained, optimizer, train_dataloader, train_dataloader_mix, eval_dataloader, loss_cls_masked = accelerator.prepare(
-        model, model_pretrained, optimizer, train_dataloader, train_dataloader_mix, eval_dataloader, loss_cls_masked
+    model, model_pretrained, optimizer, train_dataloader, train_dataloader_mix, eval_dataloader, loss_cls = accelerator.prepare(
+        model, model_pretrained, optimizer, train_dataloader, train_dataloader_mix, eval_dataloader, loss_cls
     )
 
     # Figure out how many steps we should save the Accelerator states
@@ -671,7 +671,7 @@ def main():
                 labels_mlm = batch_mix.pop("labels_mlm", None)
                 labels_mlm_cls = batch_mix.pop("labels_cls", None)
 
-                loss_fct = CrossEntropyLoss()
+                loss_mlm = CrossEntropyLoss()
 
                 # MLM + Classification
                 logits_mlm_cls, z1 = model.variational(**batch_mix, flat=False)
@@ -683,17 +683,17 @@ def main():
                 # Align with original pretrained LM
                 with torch.no_grad():
                     output_pretrained = model_pretrained(**batch_mix, labels=labels_mlm)
-                    mask_token_index = (labels_mlm.view(-1) != loss_fct.ignore_index).nonzero().squeeze(-1)
+                    mask_token_index = (labels_mlm.view(-1) != loss_mlm.ignore_index).nonzero().squeeze(-1)
                     labels_mlm = output_pretrained.logits.view(-1, model.config.vocab_size)[mask_token_index].softmax(-1)
                 
                 # Classification Error Unmasked
-                # loss = loss_fct(logits_cls, labels_cls)
-                loss = args.cls_temp * loss_cls_masked(logits_cls, labels_cls)
-                # loss += args.mlm_cls_temp * loss_cls_masked(logits_mlm_cls.view(-1, 4), labels_mlm_cls)
+                # loss = loss_mlm(logits_cls, labels_cls)
+                loss = args.cls_temp * loss_cls(logits_cls, labels_cls)
+                # loss += args.mlm_cls_temp * loss_cls(logits_mlm_cls.view(-1, 4), labels_mlm_cls)
 
                 # ELBO
-                reconstruct = args.temperature * loss_fct(logits_px.view(-1, model.config.vocab_size)[mask_token_index], labels_mlm)
-                # reconstruct = args.temperature * loss_fct(logits_px.view(-1, model.config.vocab_size), labels_mlm.view(-1))
+                reconstruct = args.temperature * loss_mlm(logits_px.view(-1, model.config.vocab_size)[mask_token_index], labels_mlm)
+                # reconstruct = args.temperature * loss_mlm(logits_px.view(-1, model.config.vocab_size), labels_mlm.view(-1))
                 kl = args.kl_temp * (torch.sum(torch.pow(torch.mean(z1, dim=1), 2)) + torch.sum(torch.pow(torch.mean(z2, dim=1), 2)))
                 loss += reconstruct + kl
                 

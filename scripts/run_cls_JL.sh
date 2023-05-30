@@ -37,7 +37,7 @@ mlm_task=$TASK_NAME
 for SEED in 13 21 42 87 100
 do
 #   Train
-  accelerate launch run_cls_jl.py \
+  accelerate launch run_cls_JL.py \
   --model_name_or_path $MODEL_PATH \
   --task_name $TASK_NAME \
   --max_length 256 \
@@ -58,7 +58,7 @@ do
 
 
 #   # Eval OOD, not using accelerator here.
-  python run_cls_jl.py \
+  python run_cls_JL.py \
   --model_name_or_path $MODEL_PATH \
   --task_name $OOD_TASK \
   --max_length 256 \
