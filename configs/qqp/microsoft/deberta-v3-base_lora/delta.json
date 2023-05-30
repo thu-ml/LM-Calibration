@@ -1,0 +1,11 @@
+{
+    "delta_type": "lora",
+    "lora_r": 8,
+    "lora_alpha": 8,
+    "delta_lr": 0.0005,
+    "unfrozen_modules": [
+        "deltas",
+        "classifier"
+    ],
+    "common_structure": false
+}

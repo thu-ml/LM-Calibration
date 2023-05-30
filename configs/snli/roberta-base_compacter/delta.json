@@ -1,0 +1,25 @@
+{
+    "delta_type": "compacter",
+    "unfrozen_modules": [
+        "deltas",
+        "layer_norm",
+        "final_layer_norm",
+        "classifier"
+    ],
+    "non_linearity": "gelu_new",
+
+    "hypercomplex_division": 4, 
+    "hypercomplex_adapters": true,
+    "hypercomplex_nonlinearity": "glorot-uniform",
+    "gradient_clip": false,
+    "phm_clamp": false,
+    "normalize_phm_weight": false, 
+    "learn_phm": true,
+    "factorized_phm": true, 
+    "shared_phm_rule": false,
+    "factorized_phm_rule": false,
+    "phm_c_init": "normal",
+    "phm_init_range": 0.0001,
+    "use_bias_down_sampler": true,
+    "use_bias_up_sampler": true
+    }

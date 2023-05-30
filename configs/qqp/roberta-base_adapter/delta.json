@@ -1,0 +1,9 @@
+{
+    "delta_type": "adapter",
+    "unfrozen_modules": [
+        "deltas",
+        "layer_norm",
+        "final_layer_norm",
+        "classifier"
+    ]
+}

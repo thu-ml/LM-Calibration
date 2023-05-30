@@ -1,0 +1,9 @@
+{
+    "delta_type": "prefix",
+    "unfrozen_modules": [
+        "deltas",
+        "classifier",
+        "pooler"
+    ],
+    "common_structure": false
+}
