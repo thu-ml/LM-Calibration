@@ -1,11 +1,8 @@
 # Run accelerate accelerate config before
 # You may need assign the model path and data path manually.
-export CUDA_VISIBLE_DEVICES=3
-export TASK_NAME=qqp
-export EVAL_SPLIT=test
+export CUDA_VISIBLE_DEVICES=0
+export EVAL_SPLIT=val
 export MODEL_NAME=roberta-base
-export SEED=42
-export MODEL_PATH=../data/huggingface/models/${MODEL_NAME}
 
 if [ $MODEL_NAME = bert-base-uncased ]; then
     BATCH_SIZE=16
@@ -33,7 +30,7 @@ for k in 1 6
 do
   # Train
   accelerate launch run_cls_k.py \
-  --model_name_or_path $MODEL_PATH \
+  --model_name_or_path $MODEL_NAME \
   --task_name $TASK_NAME \
   --max_length 256 \
   --per_device_train_batch_size $BATCH_SIZE \
@@ -58,15 +55,3 @@ do
   --conf_dir ./outputs/conf/$OOD_TASK/${EVAL_SPLIT}/${MODEL_NAME}_k=${k}_reinit_seed=${SEED}
 done
 done
-
-# export EVAL_SPLIT=test
-# for T in $TASK_NAME $OOD_TASK
-# do
-#   python run_cls_k.py \
-#   --model_name_or_path ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_k=${k}_reinit_seed=${SEED} \
-#   --task_name $T \
-#   --max_length 256 \
-#   --eval_split $EVAL_SPLIT \
-#   --per_device_train_batch_size $BATCH_SIZE \
-#   --conf_dir ./outputs/conf/${T}/${EVAL_SPLIT}/${MODEL_NAME}_k=${k}_reinit_seed=${SEED}
-# done

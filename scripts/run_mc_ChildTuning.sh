@@ -1,13 +1,10 @@
-# Run accelerate accelerate config
-export CUDA_VISIBLE_DEVICES=7
+# Run accelerate accelerate config before
+# You may need assign the model path and data path manually.
+export CUDA_VISIBLE_DEVICES=0
 export TASK_NAME=swag
 export OOD_TASK=hellaswag
-export EVAL_SPLIT=test
+export EVAL_SPLIT=val
 export MODEL_NAME=roberta-base
-export MODEL_PATH=../data/huggingface/models/${MODEL_NAME}
-
-# export t0=1000
-# export k=0.2
 
 for SEED in 13 21 42 87 100
 do
@@ -15,7 +12,7 @@ for p in 0.1
 do
   # Train
   accelerate launch run_mc_ChildTuning.py \
-    --model_name_or_path $MODEL_PATH \
+    --model_name_or_path $MODEL_NAME \
     --dataset_name $TASK_NAME \
     --max_length 256 \
     --per_device_train_batch_size 32 \

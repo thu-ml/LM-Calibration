@@ -1,13 +1,10 @@
-# Run accelerate accelerate config
-export CUDA_VISIBLE_DEVICES=1
+# Run accelerate accelerate config before
+# You may need assign the model path and data path manually.
+export CUDA_VISIBLE_DEVICES=0
 export TASK_NAME=swag
 export OOD_TASK=hellaswag
-export EVAL_SPLIT=test
+export EVAL_SPLIT=val
 export MODEL_NAME=roberta-base
-export MODEL_PATH=../data/huggingface/models/${MODEL_NAME}
-
-# export t0=1000
-# export k=0.2
 
 for SEED in 13 21 42 87 100
 do
@@ -15,7 +12,7 @@ for k in 1
 do
   # Train
   accelerate launch run_mc_k.py \
-    --model_name_or_path $MODEL_PATH \
+    --model_name_or_path $MODEL_NAME \
     --dataset_name $TASK_NAME \
     --max_length 256 \
     --per_device_train_batch_size 32 \
@@ -41,25 +38,3 @@ do
 done
 done
 done
-
-
-# export EVAL_SPLIT=test
-# for SEED in 13 21 42 87 100
-# do
-# for T in $TASK_NAME $OOD_TASK
-# do
-# for w in 0.3 0.4
-# do
-
-#   python run_mc_RecAdam.py \
-#     --model_name_or_path $MODEL_PATH \
-#     --dataset_name $T \
-#     --max_length 256 \
-#     --per_device_train_batch_size 32 \
-#     --eval_split ${EVAL_SPLIT} \
-#     --ckpt_path ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_RecAdam_weight=${w}_seed=$SEED \
-#     --conf_dir ./outputs/conf/$T/${EVAL_SPLIT}/${MODEL_NAME}_RecAdam_weight=${w}_seed=$SEED
-
-# done
-# done
-# done

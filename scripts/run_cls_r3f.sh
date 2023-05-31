@@ -1,11 +1,8 @@
 # Run accelerate accelerate config before
 # You may need assign the model path and data path manually.
-export CUDA_VISIBLE_DEVICES=5
-export TASK_NAME=qqp
-export EVAL_SPLIT=test
+export CUDA_VISIBLE_DEVICES=0
+export EVAL_SPLIT=val
 export MODEL_NAME=roberta-base
-export SEED=42
-export MODEL_PATH=../data/huggingface/models/${MODEL_NAME}
 
 if [ $MODEL_NAME = bert-base-uncased ]; then
     BATCH_SIZE=16
@@ -38,7 +35,7 @@ for r3f_eps in 0.1
 do
   # Train
   accelerate launch run_cls_r3f.py \
-  --model_name_or_path $MODEL_PATH \
+  --model_name_or_path $MODEL_NAME \
   --task_name $TASK_NAME \
   --max_length 256 \
   --per_device_train_batch_size $BATCH_SIZE \
@@ -66,24 +63,5 @@ done
 done
 done
 done
-
-# export EVAL_SPLIT=test
-# export noise_type=normal
-# export r3f_lambda=3
-# export r3f_eps=0.1
-
-# for SEED in 42
-# do
-# for T in $TASK_NAME $OOD_TASK
-# do
-#   python run_cls_r3f.py \
-#   --model_name_or_path ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_r3f_noise=${noise_type}_lambda=${r3f_lambda}_eps=${r3f_eps}_seed=${SEED} \
-#   --task_name $T \
-#   --max_length 256 \
-#   --eval_split $EVAL_SPLIT \
-#   --per_device_train_batch_size $BATCH_SIZE \
-#   --conf_dir ./outputs/conf/${T}/${EVAL_SPLIT}/${MODEL_NAME}_r3f_noise=${noise_type}_lambda=${r3f_lambda}_eps=${r3f_eps}_seed=${SEED}
-# done
-# done
 
 done

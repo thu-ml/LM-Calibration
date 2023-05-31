@@ -1,11 +1,8 @@
 # Run accelerate accelerate config before
 # You may need assign the model path and data path manually.
-export CUDA_VISIBLE_DEVICES=8
-export TASK_NAME=qqp
-export EVAL_SPLIT=test
+export CUDA_VISIBLE_DEVICES=0
+export EVAL_SPLIT=val
 export MODEL_NAME=roberta-base
-export SEED=42
-export MODEL_PATH=../data/huggingface/models/${MODEL_NAME}
 
 if [ $MODEL_NAME = bert-base-uncased ]; then
     BATCH_SIZE=16
@@ -34,7 +31,7 @@ for mixout_p in 0.9
 do
 #   Train
   accelerate launch run_cls_Mixout.py \
-  --model_name_or_path $MODEL_PATH \
+  --model_name_or_path $MODEL_NAME \
   --task_name $TASK_NAME \
   --max_length 256 \
   --per_device_train_batch_size $BATCH_SIZE \
@@ -52,7 +49,7 @@ do
 
   # Eval OOD, not using accelerator here.
   python run_cls_Mixout.py \
-  --model_name_or_path $MODEL_PATH \
+  --model_name_or_path $MODEL_NAME \
   --task_name $OOD_TASK \
   --max_length 256 \
   --per_device_train_batch_size $BATCH_SIZE \
@@ -62,23 +59,5 @@ do
 done
 done
 done
-
-# export EVAL_SPLIT=test
-# export mixout_p=0.9
-# for SEED in 13 21 42 87 100
-# do
-# for T in $TASK_NAME $OOD_TASK
-# do
-#   python run_cls_Mixout.py \
-#   --model_name_or_path $MODEL_PATH \
-#   --task_name $T \
-#   --max_length 256 \
-#   --per_device_train_batch_size $BATCH_SIZE \
-#   --eval_split ${EVAL_SPLIT} \
-#   --ckpt_path ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_Mixout_p=${mixout_p}_seed=$SEED \
-#   --conf_dir ./outputs/conf/$T/${EVAL_SPLIT}/${MODEL_NAME}_Mixout_p=${mixout_p}_seed=$SEED
-# done
-# done
-
 
 done

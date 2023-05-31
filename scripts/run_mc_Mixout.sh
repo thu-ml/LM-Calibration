@@ -1,11 +1,10 @@
-# Run accelerate accelerate config
-export CUDA_VISIBLE_DEVICES=6
+# Run accelerate accelerate config before
+# You may need assign the model path and data path manually.
+export CUDA_VISIBLE_DEVICES=0
 export TASK_NAME=swag
 export OOD_TASK=hellaswag
-export EVAL_SPLIT=test
+export EVAL_SPLIT=val
 export MODEL_NAME=roberta-base
-export MODEL_PATH=../data/huggingface/models/${MODEL_NAME}
-
 
 for SEED in 13 21 42 87 100
 do
@@ -13,7 +12,7 @@ for mixout_p in 0.9
 do
   # Train
   accelerate launch run_mc_Mixout.py \
-    --model_name_or_path $MODEL_PATH \
+    --model_name_or_path $MODEL_NAME \
     --dataset_name $TASK_NAME \
     --max_length 256 \
     --per_device_train_batch_size 32 \
@@ -28,7 +27,7 @@ do
     --conf_dir ./outputs/conf/$TASK_NAME/${EVAL_SPLIT}/${MODEL_NAME}_Mixout_p=${mixout_p}_seed=$SEED
 
   python run_mc_Mixout.py \
-    --model_name_or_path $MODEL_PATH \
+    --model_name_or_path $MODEL_NAME \
     --dataset_name $OOD_TASK \
     --max_length 256 \
     --per_device_train_batch_size 32 \

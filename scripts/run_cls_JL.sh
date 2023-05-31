@@ -1,11 +1,8 @@
 # Run accelerate accelerate config before
 # You may need assign the model path and data path manually.
-export CUDA_VISIBLE_DEVICES=5
-export TASK_NAME=qqp
+export CUDA_VISIBLE_DEVICES=0
 export EVAL_SPLIT=val
 export MODEL_NAME=roberta-base
-export SEED=42
-export MODEL_PATH=../data/huggingface/models/${MODEL_NAME}
 
 if [ $MODEL_NAME = bert-base-uncased ]; then
     BATCH_SIZE=16
@@ -38,7 +35,7 @@ for SEED in 13 21 42 87 100
 do
 #   Train
   accelerate launch run_cls_JL.py \
-  --model_name_or_path $MODEL_PATH \
+  --model_name_or_path $MODEL_NAME \
   --task_name $TASK_NAME \
   --max_length 256 \
   --per_device_train_batch_size $BATCH_SIZE \
@@ -53,32 +50,18 @@ do
   --mlm_task $mlm_task \
   --mlm_prob $mlm_prob \
   --kl_temp $kl \
-  --output_dir ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_vae_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=$SEED \
-  --conf_dir ./outputs/conf/$TASK_NAME/${EVAL_SPLIT}/${MODEL_NAME}_vae_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=$SEED
+  --output_dir ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_JL_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=$SEED \
+  --conf_dir ./outputs/conf/$TASK_NAME/${EVAL_SPLIT}/${MODEL_NAME}_JL_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=$SEED
 
 
 #   # Eval OOD, not using accelerator here.
   python run_cls_JL.py \
-  --model_name_or_path $MODEL_PATH \
+  --model_name_or_path $MODEL_NAME \
   --task_name $OOD_TASK \
   --max_length 256 \
   --per_device_train_batch_size $BATCH_SIZE \
   --eval_split ${EVAL_SPLIT} \
-  --ckpt_path ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_vae_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=${SEED} \
-  --conf_dir ./outputs/conf/$OOD_TASK/${EVAL_SPLIT}/${MODEL_NAME}_vae_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=${SEED} 
+  --ckpt_path ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_JL_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=${SEED} \
+  --conf_dir ./outputs/conf/$OOD_TASK/${EVAL_SPLIT}/${MODEL_NAME}_JL_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=${SEED} 
 
 done
-
-# Eval on test split
-# for T in $TASK_NAME $OOD_TASK
-# do
-#     python run_vae_cls_old.py \
-#     --model_name_or_path $MODEL_PATH \
-#     --task_name $T \
-#     --eval_split test \
-#     --max_length 256 \
-#     --per_device_train_batch_size 32 \
-#     --per_device_eval_batch_size 32 \
-#     --ckpt_path ./outputs/ckpts/$TASK_NAME/${MODEL_NAME}_vae_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=${SEED}  \
-#     --conf_dir ./outputs/conf/$T/test/${MODEL_NAME}_vae_kl=${kl}_temp=${temperature}_mlm=${mlm_task}-${mlm_prob}_seed=${SEED}  
-# done
